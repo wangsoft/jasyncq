@@ -103,6 +103,7 @@ class TaskRepository(AbstractRepository):
 
         async with self.pool.acquire() as conn:
             conn: Connection = conn  # NOTE(pjongy): For type hinting
+            await conn.autocommit(False)
             async with conn.cursor() as cur:
                 await cur.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;")
                 await cur.execute(get_tasks_query)
