@@ -40,7 +40,7 @@ class TaskRepository(AbstractRepository):
             '  task TEXT NOT NULL,'
             '  queue_name VARCHAR(255) NOT NULL,'
             '  depend_on VARCHAR(36) DEFAULT NULL,'
-            'INDEX idx__uuid (uuid),'
+            'PRIMARY KEY (uuid),'
             'INDEX idx__status (status),'
             'INDEX idx__progressed_at (progressed_at),'
             'INDEX idx__scheduled_at (scheduled_at),'
@@ -98,15 +98,13 @@ class TaskRepository(AbstractRepository):
             self.task__is_urgent,
             order=Order.desc,
         ).offset(offset).limit(limit).get_sql(quote_char='`')
+        get_tasks_query = get_tasks_query + " FOR UPDATE SKIP LOCKED"
         logging.debug(get_tasks_query)
 
         async with self.pool.acquire() as conn:
             conn: Connection = conn  # NOTE(pjongy): For type hinting
             async with conn.cursor() as cur:
-                await cur.execute(
-                    f'LOCK TABLES {self.table_name} WRITE, '
-                    f'{self.table_name} as {self.task_child.alias} WRITE'
-                )
+                await cur.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;")
                 await cur.execute(get_tasks_query)
                 task_rows = await cur.fetchall()
                 uuids = [task_row[0] for task_row in task_rows]
@@ -118,7 +116,6 @@ class TaskRepository(AbstractRepository):
                     ).where(self.task__uuid.isin(uuids)).get_sql(quote_char='`')
                     logging.debug(update_tasks_status)
                     await cur.execute(update_tasks_status)
-                await cur.execute('UNLOCK TABLES')
                 await conn.commit()
                 logging.debug(task_rows)
 

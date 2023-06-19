@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='jasyncq',
-    version='1.1.2',
+    version='1.1.3',
     description='High reliability asynchronous queue using mysql(lock)',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -13,7 +13,7 @@ setup(
     author_email='hi.pjongy@gmail.com',
     url='https://github.com/pjongy/jasyncq',
     install_requires=[
-        'pydantic==1.7.3',
+        'pydantic>=1.10.7',
         'aiomysql>=0.0.20',
         'PyPika>=0.37.6',
     ],
