@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import time
@@ -37,7 +38,7 @@ class TaskRepository(AbstractRepository):
             '  progressed_at BIGINT NOT NULL,'
             '  scheduled_at BIGINT NOT NULL,'
             '  is_urgent BOOL NOT NULL DEFAULT false,'
-            '  task TEXT NOT NULL,'
+            '  task json NOT NULL,'
             '  queue_name VARCHAR(255) NOT NULL,'
             '  depend_on VARCHAR(36) DEFAULT NULL,'
             'PRIMARY KEY (uuid),'
@@ -177,7 +178,7 @@ class TaskRepository(AbstractRepository):
 
     async def insert_tasks(self, tasks: List[TaskRowIn]) -> List[TaskRow]:
         logging.debug(tasks)
-        insert_tasks_query = Query.into(self.task).columns(
+        insert_tasks_query = Query.into(self.task).ignore().columns(
             self.task__uuid,
             self.task__status,
             self.task__progressed_at,
@@ -191,7 +192,7 @@ class TaskRepository(AbstractRepository):
         inserted_tasks = []
         for task in tasks:
             task_row = TaskRow(
-                uuid=str(uuid.uuid4()),
+                uuid=hashlib.md5(str(task.task).encode()).hexdigest(),
                 status=TaskStatus.QUEUED,
                 progressed_at=0,
                 scheduled_at=task.scheduled_at,
